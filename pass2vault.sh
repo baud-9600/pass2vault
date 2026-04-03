@@ -94,7 +94,7 @@ find "$STORE" -type f | while read f; do
       has_known=$(printf '%s' "$rest" | grep -cE '^[A-Za-z][A-Za-z0-9_]*:')
 
       if [ -z "$rest" ] || [ "$has_known" -eq 0 ]; then
-        # No known fields → recovery
+        # No known fields → custom
         while IFS= read -r l; do
           [ -n "$l" ] && printf '%s\n' "$l" >> "$TMPUNKNOWN"
         done <<EOF
@@ -145,14 +145,14 @@ EOF
   if [ -s "$TMPUNKNOWN" ]; then
     printf '%s:\n' "$f" >> "$TMPSKIP"
     cat "$TMPUNKNOWN" >> "$TMPSKIP"
-    printf '(imported as recovery)\n\n' >> "$TMPSKIP"
+    printf '(imported as custom)\n\n' >> "$TMPSKIP"
   fi
 
-  # Build recovery as JSON string with real newlines
+  # Build custom as JSON string with real newlines
   if [ -s "$TMPUNKNOWN" ]; then
-    recovery_json=$(jq -Rs '.' < "$TMPUNKNOWN")
+    custom_json=$(jq -Rs '.' < "$TMPUNKNOWN")
   else
-    recovery_json=""
+    custom_json=""
   fi
 
   # Build JSON from key=value lines
@@ -163,9 +163,9 @@ EOF
     ] | add
   ' < "$TMPARGS")
 
-  # Add recovery if present
-  if [ -n "$recovery_json" ]; then
-    json=$(printf '%s' "$json" | jq --argjson r "$recovery_json" '. + {recovery: $r}')
+  # Add custom if present
+  if [ -n "$custom_json" ]; then
+    json=$(printf '%s' "$json" | jq --argjson r "$custom_json" '. + {custom: $r}')
   fi
 
   echo "Importing: secrets/$FOLDER/$entrykey"
